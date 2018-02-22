@@ -1,5 +1,5 @@
 import os
-path = "i:\\documents\\ml"
+path = os.path.dirname(os.path.abspath(__file__))
 for fname in os.listdir(path):
 	if fname[0] == 's':
 		num = int(fname[1:len(fname)-4])
