@@ -19,7 +19,7 @@ for f in fl:
         elif w.getnframes() < numframe3s:
             ww = wave.open(os.path.dirname(os.path.abspath(__file__))+ "\\x" + f[1:],"wb")
             pr = w.getparams()
-            ons = pr.nframes;
+            ons = pr.nframes
             pr = pr._replace(nframes=numframe3s)
             ww.setparams(pr)
             for i in range(0,ons):
