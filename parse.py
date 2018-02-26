@@ -3,7 +3,7 @@ import os
 snd =   ['ngh','qu','ch','gh','kh','ng','nh','ph','th','tr','gi','dd','b','c','d','g','h','k','l','m','n','p','r','s','t','v','x','u+','o^','o+','e^','a(','a^','a','e','i','o','u','y','`',"'",'.','~','?']
 sndi =  [  0  , 17 , 3  , 5  , 7  , 1  , 8  , 9  , 10 , 4  , 11 , 14 , 15, 16, 12, 6 , 2 , 18, 19, 20, 21, 22, 13,23 , 25, 26,24 , 27 , 28 , 29 , 30 , 31 , 32 , 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]
 
-def nnoutput()
+def nnoutput():
     #kiem tra chi so lien tuc
     for i in range(max(sndi)):
         if i not in sndi:

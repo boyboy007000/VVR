@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 
 def nninput(n):
-    w = wave.open(os.path.dirname(os.path.abspath(__file__))+ "\\"+str(n).zfill(4)+".wav","rb")
+    w = wave.open(os.path.dirname(os.path.abspath(__file__))+ "\\x"+str(n).zfill(4)+".wav","rb")
     w.rewind()
     data = []
     for i in range(0,w.getnframes()):
@@ -18,7 +18,7 @@ def nninput(n):
         m = max(abs(co[i]))
         if m > maxn:
             maxn = m
-    print(maxn)
+#    print(maxn)
     for i in range(0,len(co)):
         co[i] = co[i] / maxn
 #    print(len(rec))
