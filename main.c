@@ -3,6 +3,15 @@
 #include <stdlib.h>
 #include "doublefann.c"
 
+struct st
+{
+    int a;
+    int b;
+};
+
+struct st s[10];
+struct st* sp;
+
 int main (int argc, char *argv[])
 {
 	const unsigned int max_epochs = 1000;
@@ -13,9 +22,6 @@ int main (int argc, char *argv[])
 	float error;
 	unsigned int i;
 
-
-		num_threads = 2;
-
 	data = fann_read_train_from_file_b("D:\\document\\GIT\\rep\\VVR\\traindata.dat");
 	ann = fann_create_standard(4, fann_num_input_train_data(data), (fann_num_input_train_data(data)+fann_num_output_train_data(data))/2, (fann_num_input_train_data(data)+fann_num_output_train_data(data))/4, fann_num_output_train_data(data));
 
@@ -25,7 +31,7 @@ int main (int argc, char *argv[])
 	before = GetTickCount();
 	for(i = 1; i <= max_epochs; i++)
 	{
-		error = num_threads > 1 ? fann_train_epoch_irpropm_parallel(ann, data, num_threads) : fann_train_epoch(ann, data);
+		error = fann_train_epoch(ann, data);
 		printf("Epochs     %8d. Current error: %.10f\n", i, error);
 	}
 	printf("ticks %d", GetTickCount()-before);

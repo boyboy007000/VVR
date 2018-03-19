@@ -609,7 +609,7 @@ FANN_EXTERNAL fann_type *FANN_API fann_run(struct fann * ann, fann_type * input)
 	for(layer_it = ann->first_layer + 1; layer_it != last_layer; layer_it++)
 	{
 		last_neuron = layer_it->last_neuron;
-		#pragma omp parallel for
+		#pragma omp parallel for private(activation_function,steepness,neuron_sum,num_connections,weights,neurons,i,neuron_pointers) firstprivate(max_sum)
 		for(neuron_it = layer_it->first_neuron; neuron_it < last_neuron; neuron_it++)
 		{
 			if(neuron_it->first_con == neuron_it->last_con)
@@ -803,7 +803,8 @@ FANN_EXTERNAL fann_type *FANN_API fann_run(struct fann * ann, fann_type * input)
 	output = ann->output;
 	num_output = ann->num_output;
 	neurons = (ann->last_layer - 1)->first_neuron;
-	for(i = 0; i != num_output; i++)
+	#pragma omp parallel for
+	for(i = 0; i < num_output; i++)
 	{
 		output[i] = neurons[i].value;
 	}
