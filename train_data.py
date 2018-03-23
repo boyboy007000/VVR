@@ -5,18 +5,19 @@ from parse import nnoutput
 
 tf = open(os.path.dirname(os.path.abspath(__file__))+ "\\traindata.dat", "wb")
 dout = nnoutput()
+din = nninput(1)
+numinp = 0
+numout = 0
+for s in dout:
+    if len(s) > numout:
+        numout = len(s)
+for co in din:
+    numinp = numinp + len(co)
+tf.write(struct.pack("<I",len(dout)*2))
+tf.write(struct.pack("<I",numinp+1))
+tf.write(struct.pack("<I",numout))
 for i in range(0,len(dout)):
     din = nninput(i+1)
-    numinp = 0
-    numout = 0
-    for s in dout:
-        if len(s) > numout:
-            numout = len(s)
-    for co in din:
-        numinp = numinp + len(co)
-    tf.write(struct.pack("<I",len(dout)*2))
-    tf.write(struct.pack("<I",numinp+1))
-    tf.write(struct.pack("<I",numout))
     #write input
     for co in din:
         for x in co:
