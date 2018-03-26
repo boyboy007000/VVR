@@ -38,7 +38,7 @@ FANN_EXTERNAL struct fann *FANN_API fann_create_from_file_b(const char *configur
         fann_error(NULL, FANN_E_CANT_OPEN_CONFIG_R, configuration_file);
         return NULL;
     }
-    ann = fann_create_from_fd(conf, configuration_file);
+    ann = fann_create_from_fd_b(conf, configuration_file);
     fclose(conf);
     return ann;
 }
@@ -62,7 +62,7 @@ FANN_EXTERNAL struct fann *FANN_API fann_create_from_file(const char *configurat
  */
 FANN_EXTERNAL int FANN_API fann_save_b(struct fann *ann, const char *configuration_file)
 {
-    return fann_save_internal_b(ann, configuration_file, 0);
+    return fann_save_internal_b(ann, configuration_file);
 }
 /* Save the network.
  */
@@ -80,7 +80,7 @@ FANN_EXTERNAL int FANN_API fann_save_to_fixed(struct fann *ann, const char *conf
 /* INTERNAL FUNCTION
    Used to save the network to a file.
  */
-int fann_save_internal_b(struct fann *ann, const char *configuration_file, unsigned int save_as_fixed)
+int fann_save_internal_b(struct fann *ann, const char *configuration_file)
 {
     int retval;
     FILE *conf = fopen(configuration_file, "wb");
@@ -90,7 +90,7 @@ int fann_save_internal_b(struct fann *ann, const char *configuration_file, unsig
         fann_error((struct fann_error *) ann, FANN_E_CANT_OPEN_CONFIG_W, configuration_file);
         return -1;
     }
-    retval = fann_save_internal_fd(ann, conf, configuration_file, save_as_fixed);
+    retval = fann_save_internal_fd_b(ann, conf, configuration_file);
     fclose(conf);
     return retval;
 }
@@ -131,7 +131,8 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
     fann_type current_max_value = 0;
 
     /* Save network parameters */
-    fwrite((int)(ann->last_layer - ann->first_layer),sizeof(int),1,conf);
+    temp = ann->last_layer - ann->first_layer;
+    fwrite(&temp,sizeof(temp),1,conf);
     fwrite(&ann->learning_rate,sizeof(ann->learning_rate),1,conf);
     fwrite(&ann->connection_rate,sizeof(ann->connection_rate),1,conf);
     fwrite(&ann->network_type,sizeof(ann->network_type),1,conf);
@@ -183,6 +184,8 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
 
         if(ann->scale_mean_in != NULL)
         {
+            temp = (unsigned int) 1;
+            fwrite( &temp, sizeof(temp), 1, conf);\
             SCALE_SAVE( scale_mean,         in )
             SCALE_SAVE( scale_deviation,    in )
             SCALE_SAVE( scale_new_min,      in )
@@ -193,8 +196,15 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
             SCALE_SAVE( scale_new_min,      out )
             SCALE_SAVE( scale_factor,       out )
         }
-
+        else
+        {
+            temp = (unsigned int) 0;
+            fwrite( &temp, sizeof(temp), 1, conf);\
+        }
+    #undef SCALE_SAVE
     /* 2.0 */
+        printf("ftell write %d\n", ftell(conf));
+
     for(layer_it = ann->first_layer; layer_it != ann->last_layer; layer_it++)
     {
         /* the neurons */
@@ -219,12 +229,15 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
      * Especially an iPAQ does not use the same binary
      * representation as an i386 machine.
      */
+
     for(i = 0; i < ann->total_connections; i++)
     {
         /* save the connection "(source weight) " */
         temp = connected_neurons[i] - first_neuron;
         fwrite(&temp,sizeof(temp),1,conf);
         fwrite(&weights[i],sizeof(weights[i]),1,conf);
+
+
     }
     return calculated_decimal_point;
 }
@@ -408,7 +421,6 @@ int fann_save_internal_fd(struct fann *ann, FILE * conf, const char *configurati
 	{
 		if(ann->scale_mean_in != NULL)
 		{
-			fprintf(conf, "scale_included=1\n");
 			SCALE_SAVE( scale_mean,			in )
 			SCALE_SAVE( scale_deviation,	in )
 			SCALE_SAVE( scale_new_min,		in )
@@ -675,6 +687,7 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
         }
     }
 #undef SCALE_LOAD
+    printf("ftell read %d\n", ftell(conf));
 
     /* allocate room for the actual neurons */
     fann_allocate_neurons(ann);
@@ -683,7 +696,6 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
         fann_destroy(ann);
         return NULL;
     }
-
     last_neuron = (ann->last_layer - 1)->last_neuron;
     fann_skip("neurons (num_inputs, activation_function, activation_steepness)=");
     for(neuron_it = ann->first_layer->first_neuron; neuron_it != last_neuron; neuron_it++)
@@ -712,7 +724,6 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
     connected_neurons = ann->connections;
     weights = ann->weights;
     first_neuron = ann->first_layer->first_neuron;
-
     for(i = 0; i < ann->total_connections; i++)
     {
         if(fread(&input_neuron, sizeof(input_neuron), 1, conf) != 1 ||
@@ -723,6 +734,8 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
             return NULL;
         }
         connected_neurons[i] = first_neuron + input_neuron;
+
+
     }
 
 #ifdef DEBUG
