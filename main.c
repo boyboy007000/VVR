@@ -1,3 +1,4 @@
+#define _FILE_OFFSET_BITS 64
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +21,7 @@ int main (int argc, char *argv[])
 	float error;
 	unsigned int i;
 /*
-    ann = fann_create_standard(4,4,4,4,4);
+    ann = fann_create_standard(4,4,1000,1000,4);
     fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
     fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
     fann_set_training_algorithm(ann, FANN_TRAIN_RPROP);
@@ -48,8 +49,10 @@ int main (int argc, char *argv[])
     } while (error > 0.1);
     printf("error %f \n", error);
     fann_save_b(ann,"D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save_test");
+    fann_save(ann,"D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save_test.txt");
     fann_destroy(ann);
     ann = fann_create_from_file_b("D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save_test");
+    fann_save(ann,"D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save_test_loaded.txt");
     printf("loaded\n");
     do
     {
@@ -57,9 +60,11 @@ int main (int argc, char *argv[])
         printf("error %f \n", error);
         getch();
     } while (1);
+    while(1);
 */
       data = fann_read_train_from_file_b("D:\\document\\GIT\\rep\\VVR\\traindata.dat");
- /*     ann = fann_create_standard(4, fann_num_input_train_data(data), (fann_num_input_train_data(data)+fann_num_output_train_data(data))/3, (fann_num_input_train_data(data)+fann_num_output_train_data(data))/3, fann_num_output_train_data(data));
+/*
+      ann = fann_create_standard(4, fann_num_input_train_data(data), (fann_num_input_train_data(data)+fann_num_output_train_data(data))/3, (fann_num_input_train_data(data)+fann_num_output_train_data(data))/3, fann_num_output_train_data(data));
    fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
    fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
    fann_set_training_algorithm(ann, FANN_TRAIN_RPROP);
@@ -75,7 +80,6 @@ int main (int argc, char *argv[])
     puts(buffer);
 
     ann = fann_create_from_file_b("D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save");
-//    fann_save_b(ann, "D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save");
    fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
    fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
    fann_set_training_algorithm(ann, FANN_TRAIN_RPROP);
@@ -94,7 +98,7 @@ int main (int argc, char *argv[])
         puts(buffer);
 		error = fann_train_epoch(ann, data);
 		printf("Epochs %d time %d Current error: %f\n", i, after-before, error);
-		if (error < 0.05)
+		if (error < 0.06)
         {
             printf("save ?\n");
             char c = getch();

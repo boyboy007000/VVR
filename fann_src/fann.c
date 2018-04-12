@@ -76,7 +76,7 @@ FANN_EXTERNAL struct fann *FANN_API fann_create_standard_array(unsigned int num_
 	return fann_create_sparse_array(1, num_layers, layers);
 }
 
-FANN_EXTERNAL struct fann *FANN_API fann_create_sparse(float connection_rate,
+FANN_EXTERNAL struct fann *FANN_API fann_create_sparse(double connection_rate,
 													   unsigned int num_layers, ...)
 {
 	struct fann *ann;
@@ -116,7 +116,7 @@ FANN_EXTERNAL struct fann *FANN_API fann_create_sparse(float connection_rate,
 	return ann;
 }
 
-FANN_EXTERNAL struct fann *FANN_API fann_create_sparse_array(float connection_rate,
+FANN_EXTERNAL struct fann *FANN_API fann_create_sparse_array(double connection_rate,
 															 unsigned int num_layers,
 															 const unsigned int *layers)
 {
@@ -230,7 +230,16 @@ FANN_EXTERNAL struct fann *FANN_API fann_create_sparse_array(float connection_ra
 		/* used in the next run of the loop */
 		num_neurons_in = num_neurons_out;
 	}
-
+	unsigned int count = 0;
+    for(layer_it = ann->first_layer; layer_it != ann->last_layer; layer_it++)
+    {
+        /* the neurons */
+        for(neuron_it = layer_it->first_neuron; neuron_it != layer_it->last_neuron; neuron_it++)
+        {
+                count+= neuron_it->last_con - neuron_it->first_con;
+        }
+    }
+    printf("created count: %u, total conn: %u\n",count,ann->total_connections);
 	fann_allocate_connections(ann);
 	if(ann->errno_f == FANN_E_CANT_ALLOCATE_MEM)
 	{

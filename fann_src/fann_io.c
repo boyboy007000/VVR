@@ -122,7 +122,7 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
     fann_type *weights;
     struct fann_neuron **connected_neurons;
     unsigned int i = 0;
-    int temp;
+    unsigned int temp;
     /* variabels for use when saving floats as fixed point variabels */
     unsigned int decimal_point = 0;
     unsigned int fixed_multiplier = 0;
@@ -203,23 +203,31 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
         }
     #undef SCALE_SAVE
     /* 2.0 */
-        printf("ftell write %d\n", ftell(conf));
-
+        printf("ftell write %lld\n", ftello64(conf));
+    unsigned int count = 0;
+    FILE* df = fopen("D:\\document\\GIT\\rep\\VVR\\fann_src\\debug_write.txt","w");
     for(layer_it = ann->first_layer; layer_it != ann->last_layer; layer_it++)
     {
         /* the neurons */
         for(neuron_it = layer_it->first_neuron; neuron_it != layer_it->last_neuron; neuron_it++)
         {
             temp = neuron_it->last_con - neuron_it->first_con;
+            if (temp > 0)
+            {
+	            fprintf(df,"%u\n",temp);
+                count+=temp;
+            }
             fwrite(&temp,sizeof(temp),1,conf);
             fwrite(&neuron_it->activation_function,sizeof(neuron_it->activation_function),1,conf);
             fwrite(&neuron_it->activation_steepness,sizeof(neuron_it->activation_steepness),1,conf);
         }
     }
+    fclose(df);
+    printf("count: %u\n", count);
     connected_neurons = ann->connections;
     weights = ann->weights;
     first_neuron = ann->first_layer->first_neuron;
-
+printf("ftell write %lld\n", ftello64(conf));
     /* Now save all the connections.
      * We only need to save the source and the weight,
      * since the destination is given by the order.
@@ -229,7 +237,7 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
      * Especially an iPAQ does not use the same binary
      * representation as an i386 machine.
      */
-
+	printf("total_connections %d\n",ann->total_connections);
     for(i = 0; i < ann->total_connections; i++)
     {
         /* save the connection "(source weight) " */
@@ -239,6 +247,7 @@ int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configura
 
 
     }
+    printf("ftell write %lld\n", ftello64(conf));
     return calculated_decimal_point;
 }
 /* INTERNAL FUNCTION
@@ -539,7 +548,7 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
     fann_type *weights;
     struct fann_layer *layer_it;
     struct fann *ann = NULL;
-
+    char b = 0;
     fread(&num_layers,sizeof(num_layers), 1, conf);
 
     ann = fann_allocate_structure(num_layers);
@@ -669,7 +678,6 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
             return NULL;                                                    \
         }                                                                   \
     }
-
     if(fread(&scale_included,sizeof(scale_included), 1, conf) == 1)
     {
         if (scale_included == 1)
@@ -687,7 +695,7 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
         }
     }
 #undef SCALE_LOAD
-    printf("ftell read %d\n", ftell(conf));
+printf("ftell read %lld\n", ftello64(conf));
 
     /* allocate room for the actual neurons */
     fann_allocate_neurons(ann);
@@ -698,11 +706,21 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
     }
     last_neuron = (ann->last_layer - 1)->last_neuron;
     fann_skip("neurons (num_inputs, activation_function, activation_steepness)=");
+    unsigned int count = 0;
+    FILE* df = fopen("D:\\document\\GIT\\rep\\VVR\\fann_src\\debug_read.txt","w");
+
     for(neuron_it = ann->first_layer->first_neuron; neuron_it != last_neuron; neuron_it++)
     {
-        if (fread(&num_connections, sizeof(num_connections), 1, conf) != 1 ||
-            fread(&tmpVal, sizeof(tmpVal), 1, conf) != 1 ||
-            fread(&neuron_it->activation_steepness, sizeof(neuron_it->activation_steepness), 1, conf) != 1)
+        b = 1;
+        b &= (fread(&num_connections, sizeof(num_connections), 1, conf) == 1);
+        if (num_connections > 0)
+        {
+            count+=num_connections;
+            fprintf(df,"%u\n",num_connections);
+        }
+        b &= (fread(&tmpVal, sizeof(tmpVal), 1, conf) == 1);
+        b &= (fread(&neuron_it->activation_steepness, sizeof(neuron_it->activation_steepness), 1, conf) == 1);
+        if (!b)
         {
             fann_error((struct fann_error *) ann, FANN_E_CANT_READ_NEURON, configuration_file);
             fann_destroy(ann);
@@ -713,7 +731,9 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
         ann->total_connections += num_connections;
         neuron_it->last_con = ann->total_connections;
     }
-
+    fclose(df);
+    printf("count:%u\n",count);
+    printf("ftell read %lld\n", ftello64(conf));
     fann_allocate_connections(ann);
     if(ann->errno_f == FANN_E_CANT_ALLOCATE_MEM)
     {
@@ -724,19 +744,21 @@ struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
     connected_neurons = ann->connections;
     weights = ann->weights;
     first_neuron = ann->first_layer->first_neuron;
+    printf("total_connections %d\n",ann->total_connections);
     for(i = 0; i < ann->total_connections; i++)
     {
-        if(fread(&input_neuron, sizeof(input_neuron), 1, conf) != 1 ||
-           fread(&weights[i], sizeof(weights[i]), 1, conf) != 1)
+        b = 1;
+        b &= (fread(&input_neuron, sizeof(input_neuron), 1, conf) == 1);
+        b &= (fread(&weights[i], sizeof(weights[i]), 1, conf) == 1);
+        if (!b)
         {
             fann_error((struct fann_error *) ann, FANN_E_CANT_READ_CONNECTIONS, configuration_file);
             fann_destroy(ann);
             return NULL;
         }
         connected_neurons[i] = first_neuron + input_neuron;
-
-
     }
+    printf("ftell read %lld\n", ftello64(conf));
 
 #ifdef DEBUG
     printf("output\n");
