@@ -63,14 +63,14 @@ int main (int argc, char *argv[])
     while(1);
 */
       data = fann_read_train_from_file_b("D:\\document\\GIT\\rep\\VVR\\traindata.dat");
-/*
+
       ann = fann_create_standard(4, fann_num_input_train_data(data), (fann_num_input_train_data(data)+fann_num_output_train_data(data))/3, (fann_num_input_train_data(data)+fann_num_output_train_data(data))/3, fann_num_output_train_data(data));
    fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
    fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
    fann_set_training_algorithm(ann, FANN_TRAIN_RPROP);
 
     fann_init_weights(ann, data);
-*/
+
     time_t timer;
     char buffer[26];
     struct tm* tm_info;
@@ -79,10 +79,10 @@ int main (int argc, char *argv[])
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
     puts(buffer);
 
-    ann = fann_create_from_file_b("D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save");
-   fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
-   fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
-   fann_set_training_algorithm(ann, FANN_TRAIN_RPROP);
+ //   ann = fann_create_from_file_b("D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save");
+ //  fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
+ //  fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
+ //  fann_set_training_algorithm(ann, FANN_TRAIN_RPROP);
 
     time(&timer);
     tm_info = localtime(&timer);
@@ -98,7 +98,7 @@ int main (int argc, char *argv[])
         puts(buffer);
 		error = fann_train_epoch(ann, data);
 		printf("Epochs %d time %d Current error: %f\n", i, after-before, error);
-		if (error < 0.06)
+		if (error < 0.2)
         {
             printf("save ?\n");
             char c = getch();
@@ -110,7 +110,7 @@ int main (int argc, char *argv[])
                 strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
                 puts(buffer);
 
-                fann_save_b(ann,"D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save");
+                fann_save_b(ann,"D:\\document\\GIT\\rep\\VVR\\fann_src\\fann_save", 1);
 
                 time(&timer);
                 tm_info = localtime(&timer);

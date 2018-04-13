@@ -28,7 +28,7 @@
 
 /* Create a network from a configuration file.
  */
-FANN_EXTERNAL struct fann *FANN_API fann_create_from_file_b(const char *configuration_file)
+FANN_EXTERNAL struct fann *FANN_API fann_create_from_file_b(const char *configuration_file, unsigned char trainSession)
 {
     struct fann *ann;
     FILE *conf = fopen(configuration_file, "rb");
@@ -38,7 +38,7 @@ FANN_EXTERNAL struct fann *FANN_API fann_create_from_file_b(const char *configur
         fann_error(NULL, FANN_E_CANT_OPEN_CONFIG_R, configuration_file);
         return NULL;
     }
-    ann = fann_create_from_fd_b(conf, configuration_file);
+    ann = fann_create_from_fd_b(conf, configuration_file,trainSession);
     fclose(conf);
     return ann;
 }
@@ -60,9 +60,9 @@ FANN_EXTERNAL struct fann *FANN_API fann_create_from_file(const char *configurat
 }
 /* Save the network.
  */
-FANN_EXTERNAL int FANN_API fann_save_b(struct fann *ann, const char *configuration_file)
+FANN_EXTERNAL int FANN_API fann_save_b(struct fann *ann, const char *configuration_file, unsigned char trainSession)
 {
-    return fann_save_internal_b(ann, configuration_file);
+    return fann_save_internal_b(ann, configuration_file, trainSession);
 }
 /* Save the network.
  */
@@ -80,7 +80,7 @@ FANN_EXTERNAL int FANN_API fann_save_to_fixed(struct fann *ann, const char *conf
 /* INTERNAL FUNCTION
    Used to save the network to a file.
  */
-int fann_save_internal_b(struct fann *ann, const char *configuration_file)
+int fann_save_internal_b(struct fann *ann, const char *configuration_file, unsigned char trainSession)
 {
     int retval;
     FILE *conf = fopen(configuration_file, "wb");
@@ -90,7 +90,7 @@ int fann_save_internal_b(struct fann *ann, const char *configuration_file)
         fann_error((struct fann_error *) ann, FANN_E_CANT_OPEN_CONFIG_W, configuration_file);
         return -1;
     }
-    retval = fann_save_internal_fd_b(ann, conf, configuration_file);
+    retval = fann_save_internal_fd_b(ann, conf, configuration_file, trainSession);
     fclose(conf);
     return retval;
 }
@@ -114,7 +114,7 @@ int fann_save_internal(struct fann *ann, const char *configuration_file, unsigne
 /* INTERNAL FUNCTION
    Used to save the network to a file descriptor.
  */
-int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configuration_file)
+int fann_save_internal_fd_b(struct fann *ann, FILE * conf, const char *configuration_file, unsigned char trainSession)
 {
     struct fann_layer *layer_it;
     int calculated_decimal_point = 0;
@@ -244,10 +244,15 @@ printf("ftell write %lld\n", ftello64(conf));
         temp = connected_neurons[i] - first_neuron;
         fwrite(&temp,sizeof(temp),1,conf);
         fwrite(&weights[i],sizeof(weights[i]),1,conf);
-
-
     }
     printf("ftell write %lld\n", ftello64(conf));
+    if (trainSession)
+    {
+        fwrite(&ann->total_connections_allocated, sizeof(ann->total_connections_allocated),1, conf);
+        fwrite(ann->train_slopes, sizeof(fann_type),ann->total_connections_allocated, conf);
+        fwrite(ann->prev_steps, sizeof(fann_type),ann->total_connections_allocated, conf);
+        fwrite(ann->prev_train_slopes, sizeof(fann_type),ann->total_connections_allocated, conf);
+    }
     return calculated_decimal_point;
 }
 /* INTERNAL FUNCTION
@@ -539,7 +544,7 @@ struct fann *fann_create_from_fd_1_1(FILE * conf, const char *configuration_file
 /* INTERNAL FUNCTION
    Create a network from a configuration file descriptor.
  */
-struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file)
+struct fann *fann_create_from_fd_b(FILE * conf, const char *configuration_file, unsigned char trainSession)
 {
     unsigned int num_layers, layer_size, input_neuron, i, num_connections;
     unsigned int tmpVal;
@@ -759,7 +764,31 @@ printf("ftell read %lld\n", ftello64(conf));
         connected_neurons[i] = first_neuron + input_neuron;
     }
     printf("ftell read %lld\n", ftello64(conf));
-
+    if (trainSession)
+    {
+        fread(&ann->total_connections_allocated, sizeof(ann->total_connections_allocated),1, conf);
+        ann->train_slopes = (fann_type *) malloc(ann->total_connections_allocated * sizeof(fann_type));
+        if (fread(ann->train_slopes, sizeof(fann_type),ann->total_connections_allocated, conf) != ann->total_connections_allocated)
+        {
+            fann_error((struct fann_error *) ann, FANN_E_CANT_READ_CONNECTIONS, configuration_file);
+            fann_destroy(ann);
+            return NULL;
+        }
+        ann->prev_steps = (fann_type *) malloc(ann->total_connections_allocated * sizeof(fann_type));
+        if (fread(ann->prev_steps, sizeof(fann_type),ann->total_connections_allocated, conf) != ann->total_connections_allocated)
+        {
+            fann_error((struct fann_error *) ann, FANN_E_CANT_READ_CONNECTIONS, configuration_file);
+            fann_destroy(ann);
+            return NULL;
+        }
+        ann->prev_train_slopes = (fann_type *) malloc(ann->total_connections_allocated * sizeof(fann_type));
+        if (fread(ann->prev_train_slopes, sizeof(fann_type),ann->total_connections_allocated, conf) != ann->total_connections_allocated)
+        {
+            fann_error((struct fann_error *) ann, FANN_E_CANT_READ_CONNECTIONS, configuration_file);
+            fann_destroy(ann);
+            return NULL;
+        }
+    }
 #ifdef DEBUG
     printf("output\n");
 #endif
